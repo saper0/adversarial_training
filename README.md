@@ -118,8 +118,8 @@ Please cite our paper if you use this code in your own work:
 
 For questions and feedback, please do not hesitate to contact:
 
-Lukas Gosch, l (dot) gosch (at) tum (dot) de, Technical University of Munich
-Simon Geisler, s (dot) geisler (at) tum (dot) de, Technical University of Munich
+Lukas Gosch, l (dot) gosch (at) tum (dot) de, Technical University of Munich  
+Simon Geisler, s (dot) geisler (at) tum (dot) de, Technical University of Munich  
 
 # Other Notes and Credit
 

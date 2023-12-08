@@ -720,10 +720,11 @@ def prep_graph(name: str,
                binary_attr: bool = False,
                feat_norm: bool = False,
                dataset_root: str = 'data',
-               return_original_split: bool = False) -> Tuple[TensorType["num_nodes", "num_features"],
-                                                             SparseTensor,
-                                                             TensorType["num_nodes"],
-                                                             Optional[Dict[str, np.ndarray]]]:
+               return_original_split: bool = False,
+               seed: int=0) -> Tuple[TensorType["num_nodes", "num_features"],
+                                     SparseTensor,
+                                     TensorType["num_nodes"],
+                                     Optional[Dict[str, np.ndarray]]]:
     """Prepares and normalizes the desired dataset
 
     Parameters
@@ -755,8 +756,14 @@ def prep_graph(name: str,
         attr, adj, labels = prep_cora(dataset_root, device, make_undirected)
     elif name == 'KarateClub':
         attr, adj, labels = prep_karate(device, make_undirected)
-    elif name == 'chameleon':
-        attr, adj, labels = prep_chameleon(dataset_root, device, make_undirected)
+    elif name == "squirrel":
+        attr, adj, labels, split = prep_squirrel(dataset_root, device, make_undirected, seed)
+    elif name == 'wikics':
+        attr, adj, labels = prep_wikics(dataset_root, device, make_undirected)
+    elif name == 'sbm_homo':
+        attr, adj, labels = prep_sbm(dataset_root, device, connectivity = "homophilic")
+    elif name == 'sbm_hetero':
+        attr, adj, labels = prep_sbm(dataset_root, device, connectivity = "heterophilic")
     elif name.startswith('ogbn'):
         pyg_dataset = PygNodePropPredDataset(root=dataset_root, name=name)
 
@@ -825,7 +832,7 @@ def prep_graph(name: str,
     elif feat_norm:
         attr = utils.row_norm(attr)
 
-    if return_original_split and split is not None:
+    if return_original_split or split is not None:
         return attr, adj, labels, split
 
     return attr, adj, labels, None

@@ -114,7 +114,8 @@ def run(data_dir: str, dataset: str, model_params: Dict[str, Any], train_params:
 
     ########################### LOAD DATA ###########################
     graph = prep_graph(dataset, data_device, dataset_root=data_dir, make_undirected=make_undirected,
-                       binary_attr=binary_attr, return_original_split=dataset.startswith('ogbn'))
+                       binary_attr=binary_attr, return_original_split=dataset.startswith('ogbn'),
+                       seed=seed)
 
     attr_orig, adj_orig, labels = graph[:3]
 

@@ -147,7 +147,7 @@ cython_debug/
 .DS_Store
 
 # Data folder
-data/
+# data/
 plots/
 plots*/
 *.pickle
