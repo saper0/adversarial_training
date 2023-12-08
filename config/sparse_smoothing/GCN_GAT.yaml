@@ -1,0 +1,81 @@
+seml:
+  name: eval_ind
+  executable: experiments/experiment_sparse_smoothing.py
+  project_root_dir: ../..
+  output_dir: log
+
+slurm:
+  experiments_per_job: 1
+  sbatch_options:
+    gres: gpu:1       # num GPUs
+    mem: 16G          # memory
+    cpus-per-task: 4  # num cores
+    time: 0-00:30     # max time, D-HH:MM
+
+fixed:
+  data_dir: data/
+  artifact_dir: cache
+  model_storage_type: pretrained_ind_adv_final
+  device: 0
+  data_device: 0
+  make_undirected: True
+  idx_to_attack: test
+  split_type: inductive
+  balance_test: True
+  n_per_class: 20
+  n_samples_pre_eval: 1_000
+  n_samples_eval: 100_000
+  batch_size_eval: 10
+  conf_alpha: 0.05
+
+
+
+grid:
+  model_params_add:
+    attack:
+      type: choice
+      options: 
+        - PRBCD
+        - LRBCD
+    self_training:
+      type: choice
+      options: 
+        - False
+        - True
+    robust_epsilon:
+        type: choice
+        options:
+          - 0
+          # - 0.05
+          - 0.1
+          - 0.2
+  dataset:
+    type: choice
+    options:
+      - cora
+      - cora_ml
+      #- pubmed
+      - citeseer
+  seed:
+    type: choice
+    options:
+      - 0
+      - 1
+      - 5
+  model_label:
+    type: choice
+    options:
+     - GCN
+     - GAT
+    #  - ChebNetII
+  pf_plus_adj:
+    type: choice
+    options:
+     - 0.01
+  pf_minus_adj:
+    type: choice
+    options:
+     - 0.6
+
+
+

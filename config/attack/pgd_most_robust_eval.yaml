@@ -1,0 +1,126 @@
+seml:
+  name: robust_diffusion_attack_evasion_global_direct
+  executable: experiments/experiment_attack.py
+  project_root_dir: ../..
+  output_dir: log/
+
+slurm:
+  experiments_per_job: 1
+  sbatch_options:
+    gres: gpu:1       # num GPUs
+    mem: 32G          # memory
+    cpus-per-task: 4  # num cores
+    time: 0-20:00     # max time, D-HH:MM
+
+fixed:
+  data_dir: data/
+  artifact_dir: cache
+  pert_adj_storage_type: pgd_most_robust_adj
+  pert_attr_storage_type: pgd_rob_gpr_0_attr
+  model_storage_type: most_robust_0
+  device: 0
+  data_device: 0
+  make_undirected: True
+  n_per_class: 20
+  idx_to_attack: test
+  split_type: transductive
+  model_params_add:
+    robust_epsilon: 1
+    train_attack_params_continuous: False
+
+grid:
+  dataset:
+    type: choice
+    options:
+      - cora_ml
+      - citeseer
+      - cora
+  seed:
+    type: choice
+    options:
+      - 0
+      - 1
+      - 5
+  epsilons: 
+    type: choice
+    options:
+      - [0, 0.01, 0.05, 0.10, 0.25, 0.5, 1]
+  model_params_add:
+    dropout_GPR:
+      type: choice
+      options:
+        - 0
+    self_training:
+      type: choice
+      options:
+        - True
+        - False
+    train_attack_params_epochs:
+      type: choice
+      options:
+        - 50
+    pretrain_epochs:
+      type: choice
+      options:  
+        - 10
+  model_label:
+    type: choice
+    options:
+     - DenseGCN
+     - DenseGPRGNN
+     - DenseAPPNP
+
+pgd:
+  fixed:
+    attack: PGD
+  grid:
+    attack_params:
+      base_lr: 
+        type: choice
+        options:
+          - 1e-1
+          - 100
+          - 1000
+      epochs:
+        type: choice
+        options:
+          - 400
+      attack_loss_type: 
+        type: choice
+        options:
+          - tanhMargin
+
+greedy_rbcd:
+  fixed:
+    attack: GreedyRBCD
+    attack_params:
+      epochs: 400
+      search_space_size: 100_000
+      loss_type: tanhMargin
+
+
+prbcd:
+  fixed:
+    binary_attr: False
+    attack: PRBCD
+    attack_params:
+      epochs: 500
+      fine_tune_epochs: 100
+      keep_heuristic: WeightOnly
+      search_space_size: 100_000
+      do_synchronize: True
+      loss_type: tanhMargin
+
+dice:
+  fixed:
+    attack: DICE
+    binary_attr: False
+    attack_params.add_ratio: 0.6
+
+
+fsgm:
+  fixed:
+    attack: FGSM
+    binary_attr: False
+    attack_params:
+      loss_type: tanhMargin
