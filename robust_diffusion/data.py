@@ -29,6 +29,7 @@ from robust_diffusion.helper import ppr_utils as ppr
 
 from torch_geometric.datasets.karate import KarateClub
 from torch_geometric.datasets.planetoid import Planetoid
+from torch_geometric.datasets.wikics import WikiCS
 from torch_geometric.datasets.wikipedia_network import WikipediaNetwork
 
 
@@ -610,24 +611,24 @@ def prep_cora(dataset_root: str = 'data',
     return attr, adj, labels
 
 @typechecked
-def prep_chameleon(dataset_root: str = 'data',
-              device: Union[int, str, torch.device] = 0,
-              make_undirected: bool = True):
-    '''Loads the chameleon dataset from 
-    https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.WikipediaNetwork.html#torch_geometric.datasets.WikipediaNetwork
-    '''
-    chameleon = WikipediaNetwork(root = dataset_root, name = 'chameleon')
-    attr = chameleon.data.x.numpy()
-    labels = chameleon.data.y.numpy()
-    edge_index = chameleon.data.edge_index.numpy()
+def prep_wikics(dataset_root: str = 'data',
+                device: Union[int, str, torch.device] = 0,
+                make_undirected: bool = True):
+    """Loads WikiCS dataset from 
+    https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/datasets/wikics.html#WikiCS
+    """
+    wikics = WikiCS(root = dataset_root)
+    attr = wikics.data.x.numpy()
+    labels = wikics.data.y.numpy()
+    edge_index = wikics.data.edge_index.numpy()
     edge_weight = np.ones(edge_index.shape[1])
     n = int(edge_index.max()+1)
     graph = SparseGraph(sp.csc_matrix((edge_weight, edge_index), (n, n)), attr, labels).standardize(
-            make_unweighted=True,
-            make_undirected=make_undirected,
-            no_self_loops=True,
-            select_lcc=True
-        ) # TODO let pyG handle transforms
+        make_unweighted=True,
+        make_undirected=True,
+        no_self_loops=True,
+        select_lcc=True
+    )
     attr = torch.FloatTensor(graph.attr_matrix).to(device)
     adj = utils.sparse_tensor(graph.adj_matrix.tocoo()).to(device)
     labels = torch.LongTensor(graph.labels).to(device)
@@ -645,6 +646,72 @@ def prep_karate(device: Union[int, str, torch.device] = 0,
     edge_weight = torch.ones(edge_index.shape[1]).to(device)
     adj = SparseTensor(row=edge_index[0], col=edge_index[1], value=edge_weight, sparse_sizes=(edge_index.max()+1, edge_index.max()+1)).to(device)
     return attr, adj, labels
+
+@typechecked
+def prep_sbm(dataset_root: str = 'data',
+             device: Union[int, str, torch.device] = 0,
+             connectivity = "homophilic"):
+    if isinstance(dataset_root, str):
+        dataset_root = Path(dataset_root)
+    if connectivity == "homophilic":
+        path_to_file = dataset_root / "csbm_K1_5_seed0_homo.npz"
+    else:
+        path_to_file = dataset_root / "csbm_K1_5_seed0_hetero.npz"
+    with np.load(path_to_file, allow_pickle=True) as loader:
+        loader = dict(loader)
+        attr = np.array(loader["X"])
+        labels = np.array(loader["y"])
+        A = np.array(loader["A"])
+    A = torch.tensor(A) == 1
+    row, col = A.nonzero(as_tuple=True)
+    edge_index = torch.vstack((row, col))
+    n = int(labels.size)
+    edge_weight = np.ones(edge_index.shape[1])
+    graph = SparseGraph(sp.csc_matrix((edge_weight, edge_index), (n, n)), attr, labels).standardize(
+        make_unweighted=True,
+        make_undirected=True,
+        no_self_loops=True,
+        select_lcc=True
+    )
+    attr = torch.FloatTensor(graph.attr_matrix).to(device)
+    adj = utils.sparse_tensor(graph.adj_matrix.tocoo()).to(device)
+    labels = torch.LongTensor(graph.labels).to(device)
+    return attr, adj, labels
+
+@typechecked
+def prep_squirrel(dataset_root: str = 'data',
+              device: Union[int, str, torch.device] = 0,
+              make_undirected: bool = True,
+              seed: int=0):
+    '''Loads the filtered squirrel dataset from https://openreview.net/forum?id=tJbbQfw-5wv'''
+    if isinstance(dataset_root, str):
+        dataset_root = Path(dataset_root)
+    path_to_file = dataset_root / "squirrel_filtered.npz"
+    with np.load(path_to_file, allow_pickle=True) as loader:
+        loader = dict(loader)
+        attr = np.array(loader["node_features"])
+        labels = np.array(loader["node_labels"])
+        edge_index = np.array(loader["edges"]).T
+        train_masks = np.array(loader["train_masks"])
+        val_masks = np.array(loader["val_masks"])
+        test_masks = np.array(loader["test_masks"])
+    split = dict(
+        trn_idx = np.argwhere(train_masks[seed]).reshape(-1),
+        val_idx = np.argwhere(val_masks[seed]).reshape(-1),
+        test_idx = np.argwhere(test_masks[seed]).reshape(-1)
+    )
+    edge_weight = np.ones(edge_index.shape[1])
+    n = int(labels.size)
+    graph = SparseGraph(sp.csc_matrix((edge_weight, edge_index), (n, n)), attr, labels).standardize(
+        make_unweighted=True,
+        make_undirected=True,
+        no_self_loops=True,
+        select_lcc=True
+    )
+    attr = torch.FloatTensor(graph.attr_matrix).to(device)
+    adj = utils.sparse_tensor(graph.adj_matrix.tocoo()).to(device)
+    labels = torch.LongTensor(graph.labels).to(device)
+    return attr, adj, labels, split
 
 @typechecked
 def prep_graph(name: str,

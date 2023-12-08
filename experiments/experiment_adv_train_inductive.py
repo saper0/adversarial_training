@@ -136,6 +136,11 @@ def run(data_dir: str, dataset: str, model_params: Dict[str, Any], train_params:
         idx_val = graph[3]['valid']
         idx_test = graph[3]['test']
         idx_unlabeled = np.array([], dtype=bool)
+    elif dataset == "squirrel":
+        idx_train = graph[3]["trn_idx"]
+        idx_val = graph[3]["val_idx"]
+        idx_test = graph[3]["test_idx"]
+        idx_unlabeled = []
     else:
         idx_train, idx_unlabeled, idx_val, idx_test = split_inductive(labels.cpu().numpy(), n_per_class=n_per_class, balance_test=balance_test)
 

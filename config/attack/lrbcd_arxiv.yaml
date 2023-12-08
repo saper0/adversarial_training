@@ -1,0 +1,88 @@
+seml:
+  name: eval_ind
+  executable: experiments/experiment_global_attack_direct.py
+  project_root_dir: ../..
+  output_dir: log/
+
+slurm:
+  experiments_per_job: 1
+  sbatch_options:
+    gres: gpu:1       # num GPUs
+    mem: 16G          # memory
+    cpus-per-task: 4  # num cores
+    time: 0-05:30     # max time, D-HH:MM
+
+fixed:
+  data_dir: data/
+  artifact_dir: cache_arxiv
+  pert_adj_storage_type: gg  # doesn't save for arxiv 
+  pert_attr_storage_type: gg
+  model_storage_type: grid
+  device: 0
+  data_device: 0
+  make_undirected: True
+  idx_to_attack: test
+  split_type: inductive
+  dataset: ogbn-arxiv
+  n_per_class: 20
+  model_params_add:
+    loss_type: tanhMargin
+    train_attack_params_local_factor: 0.25
+    attack: LRBCD
+
+
+grid:
+  model_params_add:
+    robust_epsilon:
+        type: choice
+        options:
+          - 0 
+          - 0.01
+          - 0.02
+          - 0.05
+          - 0.1
+  seed:
+    type: choice
+    options:
+      - 0
+      - 1
+      - 5
+  epsilons: 
+    type: choice
+    options:
+      - [0, 0.01, 0.02, 0.05, 0.1]
+  model_label:
+    type: choice
+    options:
+       - GCN
+       - APPNP
+
+
+prbcd:
+  fixed:
+    binary_attr: False
+    attack: PRBCD
+    attack_params:
+      epochs: 500
+      fine_tune_epochs: 100
+      keep_heuristic: WeightOnly
+      search_space_size: 3_000_000
+      do_synchronize: True
+      lr_factor: 100
+      loss_type: tanhMargin
+
+lrbcd:
+  fixed:
+    binary_attr: False
+    attack: LRBCD
+    attack_params:
+      fine_tune_epochs: 0
+      with_early_stopping: False
+      keep_heuristic: WeightOnly
+      search_space_size: 3_000_000
+      do_synchronize: True
+      loss_type: tanhMargin
+      epochs: 400
+      local_factor: 0.25
+      projection_type: Greedy
+      lr_factor: 100
